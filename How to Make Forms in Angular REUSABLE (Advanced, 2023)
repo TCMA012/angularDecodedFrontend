@@ -1,0 +1,118 @@
+How to Make Forms in Angular REUSABLE (Advanced, 2023)
+https://www.youtube.com/watch?v=o74WSoJxGPI
+Decoded Frontend 
+Sep 20, 2023 
+
+‎Advanced Angular Forms Course - Limited 10% Discount Applied
+https://bit.ly/advanced-ng-forms-discounted
+
+Sorry Dymtro but I think this solution you have provided this time, even if it works, is not the best approach to solve this kind of problems. For example, what if you want to 
+add a different set of validators on each of the reused components? You would have to start creating new inputs on the reusable component to address this kind of things and everything would be a mess inside the component sooner or later. And what is worst, you don't need that,  Angular is ready for those scenarios. I'm sure that you're aware that NG_VALUE_ACCESSOR provider and implementing the ControlValueAccesor interface should be the way to go if you want to create truly reusable form components, exactly the same way is done in the Angular forms source code. 
+Adding controls "magically" to a parent formgroup from a control that is not declared as a formControl itself seems to me a really bad patttern and I hope no external library does it in my projects.
+
+
+
+
+@DecodedFrontend
+Hi, thank you for your comment and I respect it a lot.
+
+Firstly, I'd like to say that please don't take my solution as a "silver bullet" for each use case of "form control reusing" :) The best approach may vary depending on the requirements and goals you want to achieve. 
+
+The goal of 
+ControlValueAccessor isn't making the form control reusable (though it is also possible) but rather making a 
+component/directive/DOM element/etc. behave as a form control that can support validation and other Angular form control features. Also, if you look at the source code of angular forms, you will see that the 
+ValueAccessor is used to build a "bridge" between native form controls like input and the model (FormControl) that describes this input but it is not used for sharing purposes.
+
+The pattern from this video works better if you have a 
+static and predictable group of controls that just has to be shared in some other place. Like the use case with 
+billing and delivery address. If we assume that they are static and have the same validators I don't see any problem with encapsulating everything in one component and I don't see any reason to make the host component as the CVA.
+
+If the "magic" embarrasses you, you can drop this part of the pattern and define models explicitly from the parent component, it is also fine :) I also don't like when too much magic happens but if an adequate amount of magic can bring much cleaner code then I am fine with that. For example, when you build your form dynamically, it is very convenient when the component registers the corresponding form control by itself and you don't have to separately manage the form control models and the control component. By the way, 
+Template-Driven forms are doing pretty much the same ;) E.g ngModel creates a FormControl instance and registers them in the parent FormGroup instance created by ngForm directive, so Template-Driven Forms are completely built with this "magic" and many developers like and successfully use them.
+
+
+
+
+
+Interesting approach, previously in such cases I used Control value accessor. I think this has one advantage, we can keep the model reference in the main form model
+
+
+
+Decoded Frontend
+ControlValueAccessor might be also a valid approach. It depends on the use case. CVA is useful when you want to make a component bindable with FormControl/FormGroup models which eventually brings support of angular form features like validations, etc. 
+
+
+
+@MahmoudTarek-pz1rl
+is it possible to create a custom directive for example "controlErrorHandler" to use on form controls and it can inject the validation message component like <mat-error> in my case as im using angular material
+Is it even applicable that way or there any other better solution, any advice I'd be grateful
+
+The second question came to my mind that you've fixed my problem without even seeing a directive on the controls or inputs and im really curious.
+
+
+
+
+How does this work with typed form though, if a child component is registering the FormControls on the parent FormGroup directive, and it is all configured in the remplate? To me it seems the parent will not know about the existence of those controls, as far as typing goes - it will ofc work in runtime just as the video shows. 
+
+
+
+
+
+How do you deal with the fact that nested part is invisible when inspecting a form declaration in the parent component, do you usually check the template as well? 
+
+@DecodedFrontend
+this is a good question. I think you should look always for some balance. For example, how much I will win if apply this technique for a simple login form? Well, probably not too much, right? It will bring too much magic to your forms. But maybe if it is a complex piece of logic that would require a lot of boilerplate, validation logic, etc. Then probably a bit of magic isn't so bad  Also, you can use only part of the whole pattern (providing only ControlContainer) and keep separately form models and the view if you want/need. 
+
+
+
+
+We can also write in this way:
+viewProviders: [
+    {
+      provide: ControlContainer,
+      useExisting: FormGroupDirective,
+    },
+  ],
+
+Nice! :) but this approach won't be working with a nested form groups ;)
+
+
+
+
+how about creating a standalone component with sevral different html, how do use change this component html template dynamically?
+
+
+
+
+I separate my formGroups into child components and I use output to emit child form group to parent component. do you have any idea regarding this approach?
+
+that is a valid apporoach for simple stuff, or even use the banana in a box with ngModel. 
+
+Outputs don't really mix with ReactiveForms all that well though, the idea of the 
+FormGroup and FormControl objects is they keep all the state of the forms, and track updates, validity, dirty and touched states, and all those changes can be listened to as observables. Using an output gets you the data that you can bind to whatever function/variable you like, but it does none of the logic of FormGroups.
+
+If you wanna split a FormGroup as a child component, you can implement the ControlValueAccessor interface on the component, and make the child FormGroup look like a single FormControl to the parent form, with the data defined in the same interface. Passing validators then becomes a bit tricky, so usually let the child form worry about the validation errors, and the parent only needs to be notified of validity, touched and dirty states. 
+
+
+
+
+Could you give an advice what are cases to use this approach and what are to implement custom form control?
+
+Custom Form Control (aka ControlValueAccessor) is needed when you want to make a regular component behave as a form control and support corresponding features like validation.
+
+The pattern from the video is good for extracting a normal form control into some wrapper for reusing purpose.
+
+
+
+
+
+
+how can we update the value of the forms? Use form.patchValue?
+
+patchValue could be an option
+
+
+
+
+
+
